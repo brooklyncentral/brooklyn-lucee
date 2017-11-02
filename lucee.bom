@@ -1,0 +1,184 @@
+brooklyn.catalog:
+  version: "1.0.0-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
+  publish:
+    description: |
+      Lucee is open source software that implements a lightweight dynamically-typed scripting language for the Java virtual machine (JVM), facilitating the rapid development of web applications that compile directly to Java bytecode. Lucee is compatible with contemporary CFML script and tag language variants, and provides configurable support for legacy CFML.
+    license_code: Apache-2.0
+    defaults:
+      luceeIconUrl: &luceeIconUrl "http://docs.lucee.org/assets/images/lucee-logo-bw.png"
+  items:
+  - "https://github.com/brooklyncentral/common-catalog-utils/releases/download/v0.1.0/common.bom"
+  - id: lucee
+    name: "Lucee"
+    description: |
+      A Lucee node
+    itemType: entity
+    iconUrl: *luceeIconUrl
+    item:
+      id: lucee
+      name: "Lucee"
+      type: centos7-software-process
+      brooklyn.parameters:
+      - name: lucee.version
+        label: "Lucee Version"
+        description: |
+          The version of lucee to download and install
+        type: string
+        default: 5.2.4.037-pl0
+      - name: luceepass
+        label: "Lucee Password"
+        description: |
+          The password that will be used for the Lucee Administrators at install time. This password must be 6 characters or more.
+        type: string
+        default: luce3pas5word9
+      - name: tomcatport
+        label: "Tomcat Port"
+        description: |
+          The port number Tomcat will use for it's internal web server (coyote). This port is what's used by default for Apache mod_proxy_html.
+        type: integer
+        default: 8888
+      - name: tomcatshutdownport
+        label: "Tomcat Shutdown Port"
+        description: |
+          The Tomcat shutdown port number. This port should not be open to the Internet.
+        type: integer
+        default: 8005
+      - name: tomcatajpport
+        label: "Tomcat AJP Port"
+        description: |
+          This is the port the AJP listener will be connecting to. This port is used by mod_jk and mod_proxy_ajp and is requried to be available to your apache server if you are using either of those connection methods.
+        type: integer
+        default: 8009
+      - name: systemuser
+        label: "System User"
+        description: |
+          This is the user account that Lucee will run as on your system. If this user account doesn't exist at Install time, a user and group account will be made using this name and Lucee will run as this system user.
+        type: string
+        default: root
+      - name: startatboot
+        label: "Start at boot"
+        description: |
+          This is a BOOLEAN value, meaning it must be true or false. The default setting of "true" will copy the lucee_ctl script to the /etc/init.d/ directory and use system commands to set the service to start at boot time. Setting the variable to "false" will cause the script to only exist in the installation directory. /opt/lucee/lucee_ctl for example.
+        type: boolean
+        default: true
+      - name: installconn
+        label: "Install the Apache Connector"
+        description: |
+          This is a BOOLEAN value, meaning it must be true or false.
+          This value tells the installer to install the Apache connector. (Ignored on Windows) This variable must be set to [true] if any of the Apache-specific variables are to have any relevance. If this variable is set to [false], the Apache-specific variables will be ignored.
+        type: boolean
+        default: true
+      - name: apachecontrolloc
+        label: "apachectl location"
+        description: |
+          Specifies the location of the "apachectl" control script.
+        type: string
+        default: /usr/sbin/apachectl
+      - name: apachemodulesloc
+        label: "Apache modules location"
+        description: |
+          Specifies the location for new Apache modules. Default value changes depending on default system and the existence of the default directory.
+          (RHEL/32): [/usr/lib/httpd/modules]
+          (RHEL/64): [/usr/lib64/httpd/modules]
+          (Debian/32): [/usr/lib/apache2/modules]
+          (Debian/64): [/usr/lib64/apache2/modules]
+        type: string
+        default: /usr/lib64/httpd/modules
+      - name: apacheconfigloc
+        label: "Apache config location"
+        description: |
+          Specifies the location of the primary Apache configuration script. Global installs for mod_proxy and mod_cfml will be placed in this file.
+          (RHEL): [/etc/httpd/conf/httpd.conf]
+          (Debian): [/etc/apache2/apache2.conf]
+        type: string
+        default: /etc/httpd/conf/httpd.conf
+      - name: apachelogloc
+        label: "Apache log location"
+        description: |
+          Specifies the location of the Apache log files. Used in the configuration of the connector logs for mod_jk.
+          (RHEL): [/var/log/httpd/]
+          (Debian): [/var/log/apache2/]
+        type: string
+        default: /var/log/httpd/
+      - name: installiis
+        label: "Install IIS Connector"
+        description: |
+          This value tells the installer to install the connector for IIS, the BonCode Connector. (Ignored on Linux) By setting this variable to [true], the Windows Lucee Installer will launch the BonCode Connector installer silently during the install process. You will see several DOS windows pop-up during the connector install process as the BonCode Connector varifies modules and installs what it needs.
+        type: boolean
+        default: true
+      brooklyn.config:
+        shell.env:
+          LUCEE_VERSION: $brooklyn:config("lucee.version")
+          LUCEE_PASSWORD: $brooklyn:config("luceepass")
+          TOMCAT_PORT: $brooklyn:config("tomcatport")
+          TOMCAT_SHUTDOWN_PORT: $brooklyn:config("tomcatshutdownport")
+          TOMCAT_JPA_PORT: $brooklyn:config("tomcatajpport")
+          SYSTEM_USER: $brooklyn:config("systemuser")
+          START_AT_BOOT: $brooklyn:config("startatboot")
+          INSTALL_APACHE_CONNECTOR: $brooklyn:config("installconn")
+          APACHE_CONTROL_LOCATION: $brooklyn:config("apachecontrolloc")
+          APACHE_MODULES_LOCATION: $brooklyn:config("apachemodulesloc")
+          APACHE_CONFIG_LOCATION: $brooklyn:config("apacheconfigloc")
+          APACHE_LOG_LOCATION: $brooklyn:config("apachelogloc")
+          INSTALL_IIS: $brooklyn:config("installiis")
+      install.command: |
+        sudo yum install -y httpd mod_ssl wget
+
+        wget http://cdn.lucee.org/lucee-${LUCEE_VERSION}-linux-x64-installer.run
+        chmod +x lucee-${LUCEE_VERSION}-linux-x64-installer.run
+        sudo /usr/sbin/setsebool -P httpd_can_network_connect=1
+        
+        sudo ./lucee-${LUCEE_VERSION}-linux-x64-installer.run --mode unattended \
+            --luceepass ${LUCEE_PASSWORD} \
+            --tomcatport ${TOMCAT_PORT} \
+            --tomcatshutdownport ${TOMCAT_SHUTDOWN_PORT} \
+            --tomcatajpport ${TOMCAT_JPA_PORT} \
+            --systemuser ${SYSTEM_USER} \
+            --startatboot ${START_AT_BOOT} \
+            --installconn ${INSTALL_APACHE_CONNECTOR} \
+            --apachecontrolloc ${APACHE_CONTROL_LOCATION} \
+            --apachemodulesloc ${APACHE_MODULES_LOCATION} \
+            --apacheconfigloc ${APACHE_CONFIG_LOCATION} \
+            --apachelogloc ${APACHE_LOG_LOCATION} \
+            --installiis ${INSTALL_IIS}
+
+        # see http://docs.lucee.org/guides/Various/installation-installer-documentation/installation-linux/installing-in-unattended-mode.html
+
+      checkRunning.command: |
+          /opt/lucee/lucee_ctl status
+
+  - id: lucee-template
+    version: "1.0.0-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
+    name: Lucee Deployment
+    itemType: template
+    iconUrl: *luceeIconUrl
+    license: Apache-2.0
+    item:
+      booklyn.config:
+        defaultDisplayName: Lucee Deployment
+      services:
+      - type: centos7-software-process
+        name: Lucee Server
+        provisioning.properties:
+          inboundPorts:
+          - 22
+          - 80
+          - 8080
+          - 8443
+          - 31001
+          - 31880
+          - 3306
+        brooklyn.config:
+          children.startable.mode: FOREGROUND
+        checkRunning.command: |
+          echo true
+        brooklyn.children:
+        - type: lucee
+          brooklyn.config:
+
+        - type: org.apache.brooklyn.entity.webapp.tomcat.TomcatServer
+          id: tomcat
+          name: Tomcat
+        - type: org.apache.brooklyn.entity.database.mysql.MySqlNode
+          id: mysql
+          name: mysql
