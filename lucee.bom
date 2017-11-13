@@ -106,6 +106,62 @@ brooklyn.catalog:
           This value tells the installer to install the connector for IIS, the BonCode Connector. (Ignored on Linux) By setting this variable to [true], the Windows Lucee Installer will launch the BonCode Connector installer silently during the install process. You will see several DOS windows pop-up during the connector install process as the BonCode Connector varifies modules and installs what it needs.
         type: boolean
         default: true
+      brooklyn.enrichers:
+        - type: org.apache.brooklyn.enricher.stock.Transformer
+          brooklyn.config:
+            enricher.triggerSensors:
+              - $brooklyn:sensor("host.address")
+            enricher.targetSensor: $brooklyn:sensor("main.uri")
+            enricher.targetValue: $brooklyn:formatString("http://%s/lucee/admin/server.cfm", $brooklyn:attributeWhenReady("host.address"))
+        - type: org.apache.brooklyn.enricher.stock.Transformer
+          brooklyn.config:
+            enricher.triggerSensors:
+              - $brooklyn:sensor("host.subnet.address")
+            enricher.targetSensor: $brooklyn:sensor("main.uri.mapped.subnet")
+            enricher.targetValue: $brooklyn:formatString("http://%s/lucee/admin/server.cfm", $brooklyn:attributeWhenReady("host.subnet.address"))
+        - type: org.apache.brooklyn.enricher.stock.Transformer
+          brooklyn.config:
+            enricher.triggerSensors:
+              - $brooklyn:sensor("host.name")
+            enricher.targetSensor: $brooklyn:sensor("main.uri.mapped.public")
+            enricher.targetValue: $brooklyn:formatString("http://%s/lucee/admin/server.cfm", $brooklyn:attributeWhenReady("host.name"))
+      brooklyn.initializers:
+        - type: org.apache.brooklyn.core.effector.ssh.SshCommandEffector
+          brooklyn.config:
+            name: deployURL
+            description: |
+              Deploys a file from a URL
+            parameters:
+              url:
+                description: |
+                  The url to download the file from
+                required: true
+              path:
+                description: |
+                  deployment path
+                required: true
+            command: |
+              sudo wget -O /var/www/html/${path} ${url}
+              
+        - type: org.apache.brooklyn.core.effector.ssh.SshCommandEffector
+          brooklyn.config:
+            name: deployFile
+            description: |
+              Deploys a file from a string
+            parameters:
+              content:
+                description: |
+                  The file content
+                required: true
+              path:
+                description: |
+                  deployment path
+                required: true
+            command: |
+              sudo tee /var/www/html/${path} <<-EOF
+              ${content}
+              EOF
+              
       brooklyn.config:
         shell.env:
           LUCEE_VERSION: $brooklyn:config("lucee.version")
@@ -145,7 +201,7 @@ brooklyn.catalog:
         # see http://docs.lucee.org/guides/Various/installation-installer-documentation/installation-linux/installing-in-unattended-mode.html
 
       checkRunning.command: |
-          /opt/lucee/lucee_ctl status
+          sudo /opt/lucee/lucee_ctl status
 
   - id: lucee-template
     version: "1.0.0-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
@@ -154,6 +210,7 @@ brooklyn.catalog:
     iconUrl: *luceeIconUrl
     license: Apache-2.0
     item:
+      
       booklyn.config:
         defaultDisplayName: Lucee Deployment
       services:
@@ -174,11 +231,6 @@ brooklyn.catalog:
           echo true
         brooklyn.children:
         - type: lucee
-          brooklyn.config:
-
         - type: org.apache.brooklyn.entity.webapp.tomcat.TomcatServer
           id: tomcat
           name: Tomcat
-        - type: org.apache.brooklyn.entity.database.mysql.MySqlNode
-          id: mysql
-          name: mysql
