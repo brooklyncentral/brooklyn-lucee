@@ -1,0 +1,78 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+brooklyn.catalog:
+  version: "1.0.0-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
+  items:
+  - "https://github.com/brooklyncentral/common-catalog-utils/releases/download/v0.1.0/common.tests.bom"
+  - id: luceeTest
+    itemType: template
+    name: Lucee Tests
+    item:
+      services:
+      - type: centos7-software-process
+        name: Lucee Server
+        provisioning.properties:
+          inboundPorts:
+          - 22
+          - 80
+          - 8080
+          - 8443
+          - 31001
+          - 31880
+          - 3306
+        brooklyn.config:
+          children.startable.mode: FOREGROUND
+        checkRunning.command: |
+          echo true
+        brooklyn.children:
+        - type: lucee        
+          id: target-app
+        - type: org.apache.brooklyn.entity.webapp.tomcat.TomcatServer
+          id: tomcat
+          name: Tomcat
+      - type: test-case
+        brooklyn.config:
+          targetId: target-app
+        brooklyn.children:
+        - type: assert-up-and-running-initial
+          name: "1. Webapp up and running"
+        - type: invoke-effector
+          name: "2 Invoke download content"
+          brooklyn.config:
+            effector: deployURL
+            params:
+              url: https://gist.githubusercontent.com/drigodwin/769a4c1bcfaaf086c3ea01e201b97aa2/raw/d7ccfe9f839d27591e5b3f5d5579f7eb43b10b0b/gistfile1.txt
+              path: index.cfm
+        - type: test-http-status-200
+          name: "3 Check downloaded content"
+          url: >
+            $brooklyn:formatString("http://%s/index.cfm",
+            $brooklyn:component("target-app").attributeWhenReady("host.address"))
+        - type: invoke-effector
+          name: "4 Invoke string content"
+          brooklyn.config:
+            effector: deployFile
+            params:
+              content: hello world
+              path: index2.cfm
+        - type: test-http-status-200
+          name: "5 Check loaded content"
+          url: >
+            $brooklyn:formatString("http://%s/index2.cfm",
+            $brooklyn:component("target-app").attributeWhenReady("host.address"))
