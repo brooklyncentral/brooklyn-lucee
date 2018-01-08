@@ -100,6 +100,12 @@ brooklyn.catalog:
           (Debian): [/var/log/apache2/]
         type: string
         default: /var/log/httpd/
+      - name: lucee.location
+        label: "Lucee Download Location"
+        description: |
+          The location of the Lucee setup file
+        type: string
+        default: /tmp/lucee-linux-x64-installer.run
       - name: installiis
         label: "Install IIS Connector"
         description: |
@@ -164,6 +170,7 @@ brooklyn.catalog:
               
       brooklyn.config:
         shell.env:
+          LUCEE_DOWNLOAD_LOCATION: $brooklyn:config("lucee.location")
           LUCEE_VERSION: $brooklyn:config("lucee.version")
           LUCEE_PASSWORD: $brooklyn:config("luceepass")
           TOMCAT_PORT: $brooklyn:config("tomcatport")
@@ -179,12 +186,12 @@ brooklyn.catalog:
           INSTALL_IIS: $brooklyn:config("installiis")
       install.command: |
         sudo yum install -y httpd mod_ssl wget
-
-        wget http://cdn.lucee.org/lucee-${LUCEE_VERSION}-linux-x64-installer.run
+        wget -O ${LUCEE_DOWNLOAD_LOCATION} http://cdn.lucee.org/lucee-${LUCEE_VERSION}-linux-x64-installer.run
+      
+      configure.command: |  
         chmod +x lucee-${LUCEE_VERSION}-linux-x64-installer.run
-        sudo /usr/sbin/setsebool -P httpd_can_network_connect=1
-        
-        sudo ./lucee-${LUCEE_VERSION}-linux-x64-installer.run --mode unattended \
+        sudo /usr/sbin/setsebool -P httpd_can_network_connect=1 || true
+        sudo ${LUCEE_DOWNLOAD_LOCATION} --mode unattended \
             --luceepass ${LUCEE_PASSWORD} \
             --tomcatport ${TOMCAT_PORT} \
             --tomcatshutdownport ${TOMCAT_SHUTDOWN_PORT} \
@@ -200,8 +207,11 @@ brooklyn.catalog:
 
         # see http://docs.lucee.org/guides/Various/installation-installer-documentation/installation-linux/installing-in-unattended-mode.html
 
+      launch.command: |
+          sudo /opt/lucee/lucee_ctl start
+      
       checkRunning.command: |
-          sudo /opt/lucee/lucee_ctl status
+          sudo /opt/lucee/lucee_ctl status | grep running
 
   - id: lucee-template
     version: "1.0.0-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
