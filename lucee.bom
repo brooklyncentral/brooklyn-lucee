@@ -1,5 +1,4 @@
 brooklyn.catalog:
-  version: "1.0.0-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
   publish:
     description: |
       Lucee is open source software that implements a lightweight dynamically-typed scripting language for the Java virtual machine (JVM), facilitating the rapid development of web applications that compile directly to Java bytecode. Lucee is compatible with contemporary CFML script and tag language variants, and provides configurable support for legacy CFML.
@@ -188,8 +187,8 @@ brooklyn.catalog:
         sudo yum install -y httpd mod_ssl wget
         wget -O ${LUCEE_DOWNLOAD_LOCATION} http://cdn.lucee.org/lucee-${LUCEE_VERSION}-linux-x64-installer.run
       
-      configure.command: |  
-        chmod +x lucee-${LUCEE_VERSION}-linux-x64-installer.run
+      customize.command: |  
+        chmod +x ${LUCEE_DOWNLOAD_LOCATION}
         sudo /usr/sbin/setsebool -P httpd_can_network_connect=1 || true
         sudo ${LUCEE_DOWNLOAD_LOCATION} --mode unattended \
             --luceepass ${LUCEE_PASSWORD} \

@@ -6,7 +6,7 @@
 
     <groupId>io.brooklyn.lucee</groupId>
     <artifactId>brooklyn-lucee</artifactId>
-    <version>0.2.0-SNAPSHOT</version><!--BROOKLYN_LUCEE_VERSION-->
+    <version>1.0.1-SNAPSHOT</version><!--BROOKLYN_LUCEE_VERSION-->
     <packaging>bundle</packaging>
 
     <parent>
