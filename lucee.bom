@@ -213,7 +213,7 @@ brooklyn.catalog:
           sudo /opt/lucee/lucee_ctl status | grep running
 
   - id: lucee-template
-    version: "1.0.0-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
+    version: "1.0.1-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
     name: Lucee Deployment
     itemType: template
     iconUrl: *luceeIconUrl
