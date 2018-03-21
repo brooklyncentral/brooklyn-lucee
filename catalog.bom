@@ -1,5 +1,5 @@
 brooklyn.catalog:
-  bundle: brooklyn-lucee
+  bundle: io.brooklyn.lucee.brooklyn-lucee
   version: "1.0.1-SNAPSHOT" # BROOKLYN_LUCEE_VERSION
   items:
   - classpath://lucee.bom
